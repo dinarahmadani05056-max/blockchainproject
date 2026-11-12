@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blockchain Sederhana</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        padding: 45px 20px;
+        background: #f5f5f5;
+        color: #222;
+        font-family: Arial, sans-serif;
+    }
+    .page {
+        max-width: 900px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 38px;
+        align-items: start;
+    }
+    .form-card, .block-card {
+        background: white;
+        border: 1px solid #aaa;
+        border-radius: 5px;
+        min-height: 410px;
+        padding: 25px 28px;
+    }
+    .heading {
+        text-align: center;
+        font-size: 17px;
+        font-weight: bold;
+        border-bottom: 1px solid #aaa;
+        padding: 0 0 13px;
+        margin: 0 -5px 30px;
+    }
+    .field {
+        display: grid;
+        grid-template-columns: 95px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin: 22px 0;
+    }
+    .field label { font-size: 16px; }
+    select, input {
+        width: 100%;
+        height: 39px;
+        border: 1px solid #888;
+        border-radius: 2px;
+        background: #fff;
+        padding: 7px 9px;
+        font-size: 15px;
+    }
+    .submit-wrap { text-align: center; margin-top: 30px; }
+    button {
+        border: 1px solid #777;
+        background: #ededed;
+        border-radius: 3px;
+        padding: 10px 25px;
+        font-size: 15px;
+        cursor: pointer;
+        color: #222;
+    }
+    button:hover { background: #ddd; }
+    .block-card { padding: 18px; }
+    .block-top {
+        height: 35px;
+        border: 1px solid #999;
+        border-radius: 2px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        color: #555;
+    }
+    .block-content {
+        border: 1px solid #999;
+        border-radius: 3px;
+        min-height: 300px;
+        padding: 20px 17px;
+        background: #fff;
+    }
+    .block-content h2 {
+        font-size: 20px;
+        font-weight: normal;
+        margin: 0 0 20px;
+    }
+    .hash-line {
+        font-size: 12px;
+        overflow-wrap: anywhere;
+        margin: 12px 0;
+        line-height: 1.5;
+    }
+    .transactions {
+        border-top: 1px solid #ddd;
+        margin-top: 17px;
+        padding-top: 12px;
+        font-size: 13px;
+        line-height: 1.7;
+    }
+    .notice { grid-column: 1 / -1; margin-top: -18px; font-size: 13px; }
+    .msg { padding: 9px 12px; margin-bottom: 8px; border-radius: 3px; }
+    .success { background: #e7f3e7; }
+    .error { background: #f8e5e5; }
+    .status { margin-top: 13px; font-size: 13px; }
+    .reset { margin-top: 14px; }
+    @media (max-width: 700px) {
+        .page { grid-template-columns: 1fr; gap: 20px; max-width: 440px; }
+        .form-card, .block-card { min-height: auto; }
+        .notice { grid-column: auto; margin-top: 0; }
+    }
+</style>
+</head>
+<body>
+<div class="page">
+    <section class="form-card">
+        <div class="heading">BLOCKCHAIN (BLOK)</div>
+        <form action="{{ url_for('submit') }}" method="POST">
+            <div class="field">
+                <label for="nama1">Nama 1</label>
+                <select id="nama1" name="nama1" required>
+                    <option value="">Pilih nama</option>
+                    <option>Alice</option>
+                    <option>Bob</option>
+                    <option>Charlie</option>
+                    <option>Tasya</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="nama2">Nama 2</label>
+                <select id="nama2" name="nama2" required>
+                    <option value="">Pilih nama</option>
+                    <option>Alice</option>
+                    <option>Bob</option>
+                    <option>Charlie</option>
+                    <option>Tasya</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="uang">Uang</label>
+                <input id="uang" name="uang" type="number" min="1" step="1" placeholder="100" required>
+            </div>
+            <div class="submit-wrap">
+                <button type="submit">Submit</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="block-card">
+        <div class="block-top">Informasi Block</div>
+        <div class="block-content">
+            <h2>Block {{ latest.index }}</h2>
+            <div class="hash-line"><strong>Hash:</strong><br>{{ latest.hash }}</div>
+            <div class="hash-line"><strong>Previous Hash:</strong><br>{{ latest.previous_hash }}</div>
+            <div class="transactions">
+                <strong>Transaksi:</strong>
+                {% if latest.index == 0 %}
+                    <div>Genesis Block</div>
+                {% else %}
+                    {% for tx in latest.transactions %}
+                        <div>{{ tx["from"] }} → {{ tx["to"] }} : {{ tx["amount"] }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="status">
+                Status Blockchain:
+                {% if valid %}<strong>Valid ✓</strong>{% else %}<strong>Tidak Valid ✗</strong>{% endif %}
+            </div>
+        </div>
+    </section>
+
+    <div class="notice">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="msg {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+        <div><strong>Jumlah blok:</strong> {{ blocks|length }}</div>
+        <form action="{{ url_for('reset') }}" method="POST" class="reset">
+            <button type="submit">Reset</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>
